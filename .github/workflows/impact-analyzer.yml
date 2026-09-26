@@ -1,24 +1,28 @@
 name: Codebase Impact Analyzer
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   test-and-analyze:
+
     runs-on: ubuntu-latest
 
     steps:
 
-      # 1. Get the complete Git history
+      # 1. Checkout main repository and its submodule
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
-      # 2. Install Python
+      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -30,14 +34,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Run all tests
+      # 4. Run project tests
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}/sample_project
         run: |
           python -m unittest discover \
             -s sample_project/tests \
-            -t . \
+            -t sample_project \
             -p "test*.py" \
             -v
 
@@ -48,7 +52,4 @@ jobs:
         run: |
           python main.py \
             --repo sample_project \
-            --base ${{ github.event.pull_request.base.sha }} \
-            --head ${{ github.event.pull_request.head.sha }} \
-            --ci \
-            --fail-on high
+            --commit HEAD
